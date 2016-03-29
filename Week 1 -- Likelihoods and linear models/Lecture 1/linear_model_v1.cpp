@@ -4,7 +4,7 @@ template<class Type>
 Type objective_function<Type>::operator() ()
 {
   // Data
-  DATA_VECTOR( y_i );
+  DATA_VECTOR( y_i ); //capital letters - macro - Kasper built into C++ code
 
   // Parameters
   PARAMETER( mean );
