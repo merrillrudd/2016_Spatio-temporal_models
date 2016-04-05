@@ -11,44 +11,71 @@ template<class Type>
 Type objective_function<Type>::operator() ()
 {
   // Data
-  DATA_INTEGER( model );
-  DATA_VECTOR( y_i );
-  DATA_MATRIX( X_ij );
+  DATA_INTEGER( like ); // define likelihood type, 1==delta lognormal, 2==delta gamma
+  DATA_VECTOR( y_i ); // observations
+  DATA_MATRIX( X_ij ); // covariate design matrix
+  DATA_VECTOR( include ); //0== include in NLL, 1== exclude from NLL
 
   // Parameters
-  PARAMETER_VECTOR( b_j );
-  PARAMETER_VECTOR( theta_z );
+  PARAMETER_VECTOR( b_j ); // betas to generate expected values
+  PARAMETER_VECTOR( theta_z ); // variances
 
-  // Objective funcction
+  // Transformations
   Type zero_prob = 1 / (1 + exp(-theta_z(0)));
-  Type logsd = exp(theta_z(1));
-  Type jnll = 0;
+  Type sd = exp(theta_z(1)); //standard deviation (lognormal), scale parameter theta (gamma)
   int n_data = y_i.size();
 
-  // Linear predictor
-  vector<Type> linpred_i( n_data );
-  linpred_i = X_ij * b_j;
+  Type jnll = 0;
+  Type pred_jnll = 0;
+  vector<Type> jnll_i(n_data);
+
+
+  // linear predictor
+  vector<Type> logpred_i( n_data );
+  logpred_i = X_ij * b_j; 
 
   // Delta lognormal
-  if(model==1){
+  if(like==1){
   	for( int i=0; i<n_data; i++){
-      if(y_i(i)==0) jnll -= log( zero_prob );
-      if(y_i(i)!=0) jnll -= log( 1-zero_prob ) + dlognorm( y_i(i), linpred_i(i), logsd, true );
+      if(y_i(i)==0) jnll_i(i) -= log( zero_prob );
+      if(y_i(i)!=0) jnll_i(i) -= log( 1-zero_prob ) + dlognorm( y_i(i), logpred_i(i), sd, true );
+    
+      // Running counter
+      if( include(i)==0 ) jnll += jnll_i(i);
+      if( include(i)==1 ) pred_jnll += jnll_i(i);
     }
   }
 
   // Delta gamma
-  if(model==2){
+  if(like==2){
+    for(int i=0; i<n_data; i++){
+    	if(y_i(i)==0) jnll_i(i) -= log( zero_prob );
+    	if(y_i(i)!=0) jnll_i(i) -= log( 1-zero_prob ) + dgamma( y_i(i), logpred_i(i), sd, true );
+
+        // Running counter
+        if( include(i)==0 ) jnll += jnll_i(i);
+        if( include(i)==1 ) pred_jnll += jnll_i(i);
+    }
+  }
+
+  // negative binomial
+  if(like==3){
   	for(int i=0; i<n_data; i++){
-  		if(y_i(i)==0) jnll -= log( zero_prob );
-  		if(y_i(i)!=0) jnll -= log( 1-zero_prob ) + dgamma( y_i(i), linpred_i(i), logsd, true );
+  		jnll_i(i) -= dnbinom2(y_i(i), logpred_i(i), pow(sd,2), true);
+
+  		// Running counter
+        if( include(i)==0 ) jnll += jnll_i(i);
+        if( include(i)==1 ) pred_jnll += jnll_i(i);
   	}
   }
 
   
   // Reporting
   REPORT( zero_prob );
-  REPORT( logsd );
-  REPORT( linpred_i );
+  REPORT( sd );
+  REPORT( logpred_i );
+  REPORT( b_j );
+  REPORT( pred_jnll );
+  REPORT( jnll_i );
   return jnll;
 }
