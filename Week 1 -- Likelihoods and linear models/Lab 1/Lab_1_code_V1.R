@@ -1,5 +1,5 @@
 
-setwd( "C:/Users/James.Thorson/Desktop/Project_git/2016_Spatio-temporal_models/Week 1 -- Likelihoods and linear models/Lab 1" )
+setwd( "C:\\Git_Projects\\2016_Spatio-temporal_models\\Week 1 -- Likelihoods and linear models\\Lab 1" )
 library(TMB)
 
 ###########
