@@ -17,7 +17,8 @@ X_list <- NULL
 X_list[[1]] <- as.matrix(rep(1, length(catch)))
 
 dyn.load( dynlib("glm_hw") )
-Data <- list(model=1, "y_i"=catch, "X_ij"=as.matrix(X_list[[1]]))
+
+Data <- list(model=2, "y_i"=catch, "X_ij"=as.matrix(X_list[[1]]))
 Parameters <- list("b_j"=rep(0,ncol(X_list[[1]])), "theta_z"=c(0,0))
 Obj <- MakeADFun( data=Data, parameters=Parameters)
 
