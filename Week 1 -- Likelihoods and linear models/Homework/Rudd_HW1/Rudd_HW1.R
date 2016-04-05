@@ -18,7 +18,8 @@ X_list[[1]] <- as.matrix(rep(1, length(catch)))
 
 dyn.load( dynlib("glm_hw") )
 
-Data <- list(model=2, "y_i"=catch, "X_ij"=as.matrix(X_list[[1]]))
+## model 1 - delta lognormal
+Data <- list(model=1, "y_i"=catch, "X_ij"=as.matrix(X_list[[1]]))
 Parameters <- list("b_j"=rep(0,ncol(X_list[[1]])), "theta_z"=c(0,0))
 Obj <- MakeADFun( data=Data, parameters=Parameters)
 
@@ -26,6 +27,19 @@ Opt <- nlminb( start=Obj$par, objective=Obj$fn, gradient=Obj$gr )
 Opt$diagnostics <- data.frame( "name"=names(Obj$par), "Est"=Opt$par, 
 	"final_gradient"=as.vector(Obj$gr(Opt$par)) )
 
-SD <- sdreport( Obj )
+SD1 <- sdreport( Obj )
 
-Report = Obj$report()
+Report1 = Obj$report()
+
+## model 2 - delta gamma 
+Data <- list(model=1, "y_i"=catch, "X_ij"=as.matrix(X_list[[1]]))
+Parameters <- list("b_j"=rep(0,ncol(X_list[[1]])), "theta_z"=c(0,0))
+Obj <- MakeADFun( data=Data, parameters=Parameters)
+
+Opt <- nlminb( start=Obj$par, objective=Obj$fn, gradient=Obj$gr )
+Opt$diagnostics <- data.frame( "name"=names(Obj$par), "Est"=Opt$par, 
+	"final_gradient"=as.vector(Obj$gr(Opt$par)) )
+
+SD2 <- sdreport( Obj )
+
+Report2 = Obj$report()
