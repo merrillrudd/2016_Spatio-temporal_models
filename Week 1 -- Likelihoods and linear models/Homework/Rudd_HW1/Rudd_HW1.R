@@ -13,13 +13,26 @@ compile( "glm_hw.cpp" )
 ### functions
 ##########################################
 
-runModel <- function(data, parameters, map){
+runModel <- function(data, parameters, map=NULL){
 
 	dyn.load( dynlib("glm_hw") )
 
 	Obj <- MakeADFun( data=data, parameters=parameters, map=map)
-	Opt <- tryCatch(nlminb( start=Obj$par, objective=Obj$fn, gradient=Obj$gr ), error=function(e) NA)
-	if(all(is.na(Opt))==FALSE) Opt$diagnostics <- data.frame("name"=names(Obj$par), "Est"=Opt$par, "final_gradient"=as.vector(Obj$gr(Opt$par)))
+	Opt <- tryCatch(nlminb( start=Obj$par, objective=Obj$fn, gradient=Obj$gr), error=function(e) NA)
+	if(all(is.na(Opt))==FALSE){
+		Opt$diagnostics <- data.frame("name"=names(Obj$par), "Est"=Opt$par, "final_gradient"=as.vector(Obj$gr(Opt$par)))
+		
+		ii <- 0
+	    while(abs(max(Opt$diagnostics$"final_gradient"))>0.05){
+    		print("re-running, final gradient too high")
+    		ParList <- Obj$env$parList( Obj$env$last.par.best )
+                Obj <- MakeADFun(data=data, parameters=ParList) 
+                Opt <- tryCatch( nlminb( start= Obj$env$last.par.best*runif(length(Obj$par),0.9,1.1), objective=Obj$fn, gradient=Obj$gr), error=function(e) NA)
+                if(all(is.na(Opt))==FALSE) Opt$diagnostics <- data.frame("name"=names(Obj$par), "Est"=Opt$par, "final_gradient"=as.vector(Obj$gr(Opt$par)))
+            ii <- ii + 1
+            if(ii==25) break
+        }
+    }
 	Report <- Obj$report()
 
 	Outs <- NULL
@@ -28,9 +41,8 @@ runModel <- function(data, parameters, map){
 	return(Outs)
 }
 
-crossValidate <- function(K, data, parameters, map){
+crossValidate <- function(K, data, parameters, map=NULL){
 
-   # K <- 10
    Partition_i <- sample(x=1:K, size=length(catch), replace=TRUE)
    PredNLL_K <- rep(NA, K)
 
@@ -43,7 +55,7 @@ crossValidate <- function(K, data, parameters, map){
    	rm(kData)
    }
 
-   out <- mean(PredNLL_K / table(Partition_i))
+   out <- mean(PredNLL_K / table(Partition_i), na.rm=TRUE)
 
    return(out)
 }
@@ -52,9 +64,7 @@ simulateData <- function(observations=12210, like, report){
 	
 	if(like==1) sim <- (1-rbinom(observations, size=1, prob=report$zero_prob))*rlnorm(observations, report$logpred_i, report$sd)
 
-	if(like==2) sim <- (1-rbinom(observations, size=1, prob=report$zero_prob))*rgamma(observations, shape=report$logpred_i, scale=report$sd)
-
-	if(like==3) sim <- rnbinom(observations, mu=report$logpred_i, size=(report$logpred_i^2)/(report$sd^2 - report$logpred_i))
+	if(like==2) sim <- (1-rbinom(observations, size=1, prob=report$zero_prob))*rgamma(observations, shape=1/(report$sd^2), scale=exp(report$logpred_i)*(report$sd^2))
 
 	return(sim)
 }
@@ -63,64 +73,57 @@ simulateData <- function(observations=12210, like, report){
 ##########################################
 ### Part 1 - case study demonstration
 ##########################################
+
 ## data
 year <- EBS_pollock_data$year
 catch <- EBS_pollock_data$catch
-# temp <- EBS_pollock_data$waterTmpC
-# 	temp[which(temp==-9999)] <- NA
-# mean_temp <- mean(temp, na.rm=TRUE)
-# temp_dist <- dlnorm(temp, mean_temp, sd(temp, na.rm=TRUE))
-# temp_cov <- temp_dist/mean(temp_dist, na.rm=TRUE)
-# temp_cov[which(is.na(temp_cov))] <- 1
 
 
 ## design matrix
 X <- NULL
 X[[1]] <- as.matrix(rep(1, length(catch)))
-# X[[2]] <- as.matrix(temp_cov)
+X[[2]] <- as.matrix(cbind(rep(1,length(catch)), EBS_pollock_data$lat, EBS_pollock_data$long))
 
 ## data and parameter lists
 Data <- NULL
 Data[[1]] <- list("like"=1, "y_i"=catch, "X_ij"=as.matrix(X[[1]]), "include"=rep(0,length(catch))) # delta lognormal
 Data[[2]] <- list("like"=2, "y_i"=catch, "X_ij"=as.matrix(X[[1]]), "include"=rep(0,length(catch))) # delta gamma
-Data[[3]] <- list("like"=3, "y_i"=catch, "X_ij"=as.matrix(X[[1]]), "include"=rep(0,length(catch))) # negative binomial
-# Data[[4]] <- list("like"=1, "y_i"=catch, "X_ij"=as.matrix(X[[2]]), "include"=rep(0,length(catch))) # delta lognormal with temperature covariate
+Data[[3]] <- list("like"=2, "y_i"=catch, "X_ij"=as.matrix(X[[2]]), "include"=rep(0,length(catch))) # delta lognormal with lat/lon covariate
 
 
 Parameters <- NULL
 Parameters[[1]] <- list("b_j"=rep(0, ncol(X[[1]])), "theta_z"=c(log(1), log(1)))
-Parameters[[2]] <- list("b_j"=rep(1e-5, ncol(X[[1]])), "theta_z"=c(log(1), log(1)))
-Parameters[[3]] <- list("b_j"=rep(1e-5, ncol(X[[1]])), "theta_z"=c(log(1), log(1)))
-# Parameters[[4]] <- list("b_j"=rep(0, ncol(X[[2]])), "theta_z"=c(log(1), log(1)))
-
-
-Map <- list()
-Map[["theta_z"]] <- 1:length(Parameters[["theta_z"]])
-Map[["theta_z"]][1] <- NA
-Map[["theta_z"]] <- factor(Map[["theta_z"]])
+Parameters[[2]] <- list("b_j"=rep(0, ncol(X[[1]])), "theta_z"=c(log(1), log(1)))
+Parameters[[3]] <- list("b_j"=rep(0, ncol(X[[2]])), "theta_z"=c(log(1), log(1)))
 
 
 ## model 1 - delta lognormal
-model1 <- runModel(data=Data[[1]], parameters=Parameters[[1]], map=NULL)
+model1 <- runModel(data=Data[[1]], parameters=Parameters[[1]])
 Report1 <- model1$Report
+Opt1 <- model1$Opt
 Like1 <- model1$Opt$objective
 npar1 <- nrow(model1$Opt$diagnostic)
-pprob1 <- crossValidate(K=10, data=Data[[1]], parameters=Parameters[[1]], map=NULL)
+set.seed(1234)
+pprob1 <- crossValidate(K=10, data=Data[[1]], parameters=Parameters[[1]])
 
 ## model 2 - delta gamma
-model2 <- runModel(data=Data[[2]], parameters=Parameters[[2]], map=NULL)
+model2 <- runModel(data=Data[[2]], parameters=Parameters[[2]])
 Report2 <- model2$Report
+Opt2 <- model2$Opt
 Like2 <- model2$Opt$objective
 npar2 <- nrow(model2$Opt$diagnostic)
-pprob2 <- crossValidate(K=10, data=Data[[2]], parameters=Parameters[[2]], map=NULL)
+set.seed(1234)
+pprob2 <- crossValidate(K=10, data=Data[[2]], parameters=Parameters[[2]])
 
 
 ## model 3 - negative binomial
-model3 <- runModel(data=Data[[3]], parameters=Parameters[[3]], map=Map)
+model3 <- runModel(data=Data[[3]], parameters=Parameters[[3]])
 Report3 <- model3$Report
+Opt3 <- model3$Opt
 Like3 <- model3$Opt$objective
 npar3 <- nrow(model3$Opt$diagnostic)
-pprob3 <- crossValidate(K=10, data=Data[[3]], parameters=Parameters[[3]], map=Map)
+set.seed(1234)
+pprob3 <- crossValidate(K=10, data=Data[[3]], parameters=Parameters[[3]])
 
 
 
@@ -138,59 +141,48 @@ hist(log(1+Sim_catch2), freq=FALSE, add=TRUE, col=rgb(0,1,0,0.2))
 
 hist(log(1+catch), freq=FALSE, col=rgb(1,0,0,0.2))
 set.seed(123)
-Sim_catch3 <- simulateData(like=3, report=Report3)
+Sim_catch3 <- simulateData(like=2, report=Report3)
 hist(log(1+Sim_catch3), freq=FALSE, add=TRUE, col=rgb(1,1,0,0.2))
-
-# hist(log(1+catch), freq=FALSE, col=rgb(1,0,0,0.2))
-# set.seed(123)
-# Sim_catch4 <- (1-rbinom(1e5, size=1, prob=Report4$zero_prob))*rlnorm(1e5, Report4$logpred_i, Report4$sd)
-# hist(log(1+Sim_catch4), freq=FALSE, add=TRUE, col=rgb(1,1,0,0.2))
 
 ##########################################
 ### Part 2 - simulation experiment
 ##########################################
 
-like_vec <- 1:3
 sim_vec <- 1:100
 
-## iterations by simulation model by estimation model
-results <- relerr <- array(NA, dim=c(length(sim_vec),length(like_vec),length(like_vec)))
+estimates <- relerr <- array(NA, dim=c(length(sim_vec), 3, 3))
 
 start <- Sys.time()
-for(om in 1:length(like_vec)){
-	set.seed(1234)
-	for(ss in 1:length(sim_vec)){
-		if(like_vec[om]==1) Report <- Report1
-		if(like_vec[om]==2) Report <- Report2
-		if(like_vec[om]==3) Report <- Report3
-		sim_catch <- simulateData(observations=12210, like=like_vec[om], report=Report)
+for(ss in sim_vec){
 
+	for(om in 1:3){
+		set.seed(ss)
+		if(om==1) simdata <- simulateData(like=1, report=Report1) ## data truly arise from delta lognormal process 
+		if(om==2) simdata <- simulateData(like=2, report=Report2) ## data truly arise from delta gamma process
+		if(om==3) simdata <- simulateData(like=2, report=Report3) ## data truly arise from delta gamma process with covariates
 
-		for(em in 1:length(like_vec)){
-			input_data <- list("like"=like_vec[em], "y_i"=sim_catch, "X_ij"=as.matrix(X[[1]]), "include"=rep(0,length(sim_catch)))
-
-			if(like_vec[em]==1){
-				input_params <- Parameters[[1]]
-				input_map <- NULL
-			}
-			if(like_vec[em]==2){
-				input_params <- Parameters[[2]]
-				input_map <- NULL
-			}
-			if(like_vec[em]==3){
-				input_params <- Parameters[[3]]
-				input_map <- Map
-			}
-
-			model <- runModel(data=input_data, parameters=input_params, map=input_map)
-			results[sim_vec[ss], like_vec[om], like_vec[em]] <- model$Report$b_j
-			relerr[sim_vec[ss], 1, like_vec[em]] <- (model$Report$b_j - model1$Report$b_j)/model1$Report$b_j
-			relerr[sim_vec[ss], 2, like_vec[em]] <- (model$Report$b_j - model2$Report$b_j)/model2$Report$b_j
-			relerr[sim_vec[ss], 3, like_vec[em]] <- (model$Report$b_j - model3$Report$b_j)/model3$Report$b_j
-
-			rm(model)
-		}
-
-	}
+	    for(em in 1:3){
+    		## assuming data arise from lognormal process
+    		if(em==1){
+    			inputdata <- list("like"=1, "y_i"=simdata, "X_ij"=as.matrix(X[[1]]), "include"=rep(0,length(simdata)))
+    			inputparams <- list("b_j"=rep(0, ncol(X[[1]])), "theta_z"=c(log(1), log(1)))
+    		}
+    		## assuming data arise from gamma process
+    		if(em==2){
+    			inputdata <- list("like"=2, "y_i"=simdata, "X_ij"=as.matrix(X[[1]]), "include"=rep(0,length(simdata)))
+    			inputparams <- list("b_j"=rep(0, ncol(X[[1]])), "theta_z"=c(log(1), log(1)))
+    		}
+    		## assuming data arise from gamma process with covariates
+    		if(em==3){
+    			inputdata <- list("like"=2, "y_i"=simdata, "X_ij"=as.matrix(X[[2]]), "include"=rep(0,length(simdata)))
+    			inputparams <- list("b_j"=rep(0, ncol(X[[2]])), "theta_z"=c(log(1), log(1)))
+    		}
+    		run <- runModel(data=inputdata, parameters=inputparams)
+    		estimates[ss,em,om] <- run$Report$b_j[1]
+    		if(om==1) relerr[ss,em,om] <- (run$Report$b_j[1] - Report1$b_j[1])/Report1$b_j[1]
+    		if(om==2) relerr[ss,em,om] <- (run$Report$b_j[1] - Report2$b_j[1])/Report2$b_j[1]
+    		if(om==3) relerr[ss,em,om] <- (run$Report$b_j[1] - Report3$b_j[1])/Report3$b_j[1]
+    	}
+    }
 }
 end <- Sys.time() - start

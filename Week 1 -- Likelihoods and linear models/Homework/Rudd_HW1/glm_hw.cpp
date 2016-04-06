@@ -34,6 +34,7 @@ Type objective_function<Type>::operator() ()
   vector<Type> logpred_i( n_data );
   logpred_i = X_ij * b_j; 
 
+
   // Delta lognormal
   if(like==1){
   	for( int i=0; i<n_data; i++){
@@ -50,7 +51,7 @@ Type objective_function<Type>::operator() ()
   if(like==2){
     for(int i=0; i<n_data; i++){
     	if(y_i(i)==0) jnll_i(i) -= log( zero_prob );
-    	if(y_i(i)!=0) jnll_i(i) -= log( 1-zero_prob ) + dgamma( y_i(i), logpred_i(i), sd, true );
+    	if(y_i(i)!=0) jnll_i(i) -= log( 1-zero_prob ) + dgamma( y_i(i), pow(sd,-2), exp(logpred_i(i))*pow(sd,2), true );
 
         // Running counter
         if( include(i)==0 ) jnll += jnll_i(i);
@@ -58,16 +59,7 @@ Type objective_function<Type>::operator() ()
     }
   }
 
-  // negative binomial
-  if(like==3){
-  	for(int i=0; i<n_data; i++){
-  		jnll_i(i) -= dnbinom2(y_i(i), logpred_i(i), pow(sd,2), true);
 
-  		// Running counter
-        if( include(i)==0 ) jnll += jnll_i(i);
-        if( include(i)==1 ) pred_jnll += jnll_i(i);
-  	}
-  }
 
   
   // Reporting
