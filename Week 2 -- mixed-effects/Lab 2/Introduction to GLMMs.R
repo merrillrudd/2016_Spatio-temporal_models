@@ -39,10 +39,12 @@ print( summary(GLM) )
 
 
 # Using fixed effects (Not recommended)
+	## global intercept
 GLM = glm( y_i ~ 0 + factor(s_i), family="poisson" )
 print( summary(GLM) )
 
 # Using mixed effects (Recommended) -- doesn't appear to use REML
+	## easiest to think about random effects if they are zero-centered, requires fixed effect
 library(lme4)
 GLMM = glmer( y_i ~ 1 + (1 | factor(s_i)), family="poisson" )
 print( summary(GLMM) )
@@ -71,6 +73,12 @@ Obj$fn( Obj$par )
 Obj$gr( Obj$par )
 
 # Optimize
+	## faster when everything is normally distributed
+	## newton method works perfectly when you have a perfect quadratic function
+	## In this case - likelihood function is skewed normal - overshooting every time
+	## takes longer, needs several iterations to optimize random effects given fixed effects
+	## actually quasi Newton algorithm - ustep keeps track of curvature relatively to a quadratic likelihood -- ustep telling it not to make as big of steps as it wants to, will go to 1 in a well-behaved model
+	## if ustep is not getting to 1, then final gradients are probably not getting low
 start_time = Sys.time()
 Opt = nlminb( start=Obj$par, objective=Obj$fn, gradient=Obj$gr, control=list("trace"=1) )
   Opt[["final_gradient"]] = Obj$gr( Opt$par )
@@ -78,7 +86,10 @@ Opt = nlminb( start=Obj$par, objective=Obj$fn, gradient=Obj$gr, control=list("tr
 
 # Get reporting and SEs
 Report = Obj$report()
-  SD = sdreport( Obj )
+  SD = sdreport( Obj ) ## delta method to figure out standard errors (inverse hessian)
+
+  ## standard empirical bayes - just trying to estimate parameters, not random effect
+  ## want to make a statement about epsilon - predict them to have a value that maximizes the likelihood function
 
 ######################
 # Compare estimates

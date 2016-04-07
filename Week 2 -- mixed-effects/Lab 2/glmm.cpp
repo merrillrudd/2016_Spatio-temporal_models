@@ -31,10 +31,15 @@ Type objective_function<Type>::operator() ()
   // Reporting
   Type sdz = exp(log_sdz);
 
+  // report - debugging and diagnostic tool - just outputs the value
+  // can use to look at fits - scroll through diagnostics to make sure they look right
+  // can get out value of derived thing regardless of whether the model is converging (able to estimate standard errors)
   REPORT( sdz );
   REPORT( z_s );
   REPORT( x0 );
   
+  // to calculate standard deviation of derived value - would need to do delta method by hand
+  // advantageous to use ADREPORT for anything you may want to look at
   ADREPORT( sdz );
   ADREPORT( z_s );
   ADREPORT( x0 );
