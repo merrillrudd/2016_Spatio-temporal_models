@@ -1,5 +1,5 @@
 
-setwd( "C:/Users/James.Thorson/Desktop/Project_git/2016_Spatio-temporal_models/Week 2 -- mixed-effects/Lab 2" )
+setwd("C:\\Git_Projects\\2016_Spatio-temporal_models\\Week 2 -- mixed-effects\\Lab 2")
 Use_REML = FALSE
 
 ############
@@ -27,9 +27,16 @@ library(lattice)
 histogram( ~ y_i | factor(s_i), breaks=seq( min(y_i), max(y_i), length=10), type="density", panel=function(x,...){ panel.histogram(x, ...); panel.mathdensity(dmath=dnorm, col="black", args = list(mean=mean(x),sd=sd(x))) } )      #
 
 ###### Fit using R
+	## zero means no intercept
+	## factor means you want a value for each size
+	## glm automatically assumes canonical link
+		## Poisson is easiest to estimate using log link
+		## help for GLM will tell you what the canonical links are for each family
+
 # No site level (Not recommended)
 GLM = glm( y_i ~ 0, family="poisson" )
 print( summary(GLM) )
+
 
 # Using fixed effects (Not recommended)
 GLM = glm( y_i ~ 0 + factor(s_i), family="poisson" )
