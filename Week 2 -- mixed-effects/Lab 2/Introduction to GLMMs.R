@@ -1,4 +1,5 @@
 
+
 setwd("C:\\Git_Projects\\2016_Spatio-temporal_models\\Week 2 -- mixed-effects\\Lab 2")
 Use_REML = FALSE
 
@@ -34,7 +35,7 @@ histogram( ~ y_i | factor(s_i), breaks=seq( min(y_i), max(y_i), length=10), type
 		## help for GLM will tell you what the canonical links are for each family
 
 # No site level (Not recommended)
-GLM = glm( y_i ~ 0, family="poisson" )
+GLM = glm( y_i ~ 1, family="poisson" )
 print( summary(GLM) )
 
 
