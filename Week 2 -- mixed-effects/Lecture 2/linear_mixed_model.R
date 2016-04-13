@@ -1,10 +1,6 @@
-<<<<<<< HEAD
+
 rm(list=ls())
 setwd("C:\\Git_Projects\\2016_Spatio-temporal_models\\Week 2 -- mixed-effects\\Lecture 2")
-=======
-
-setwd( "C:/Users/James.Thorson/Desktop/Project_git/2016_Spatio-temporal_models/Week 2 -- mixed-effects/Lecture 2" )
->>>>>>> 7b1ce93d3b7145dba80ac87fcdf7ad2a75bd41b7
 Use_REML = FALSE
 
 ######################
