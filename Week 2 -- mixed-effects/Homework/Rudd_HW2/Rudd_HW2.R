@@ -104,8 +104,11 @@ nsim <- 100
 set.seed(3)
 simdata <- lapply(1:nsim, function(x) rpois(tobs, exp(lobs)))
 
+## store estimates and SE for mu
 est_mu <- array(NA, dim=c(4, 2, nsim))
 	colnames(est_mu) <- c("Estimate", "SE")
+
+## loop over simulated datasets
 for(i in 1:nsim){
 
 	Data_sim <- lapply(1:4, function(x) list(model=x, tobs=tobs, nsites=nsites, y_j=simdata[[i]], site_j=sim_index))
@@ -126,10 +129,14 @@ for(i in 1:nsim){
 
 }
 
+## display results
+## includes calculations of mean estimates and interval coverage tracking
+png("coverage.png", width=9, height=8, units="in", res=200)
 par(mfrow=c(2,2), mar=c(0,0,0,0), omi=c(1,1,1,1))
 plot(est_mu[1,1,], ylim=c(1.6, 2.9), xaxt="n", yaxt="n", pch=19, xaxs="i", yaxs="i")
 segments(x0=1:nsim, x1=1:nsim, y0=est_mu[1,1,]-1.96*est_mu[1,2,], y1=est_mu[1,1,]+1.96*est_mu[1,2,])
 count1 <- length(which(est_mu[1,1,]-1.96*est_mu[1,2,] < mu & est_mu[1,1,]+1.96*est_mu[1,2,] > mu))
+mean1 <- mean(est_mu[1,1,])
 abline(h=mu, col="red", lwd=2)
 axis(2, pretty(c(1.6, 2.9))[-1])
 mtext(side=1, line=-2, "No site or \noverdispersion effects", font=2)
@@ -137,6 +144,7 @@ mtext(side=1, line=-2, "No site or \noverdispersion effects", font=2)
 plot(est_mu[2,1,], ylim=c(1.6, 2.9), xaxt="n", yaxt="n", pch=19, xaxs="i", yaxs="i")
 segments(x0=1:nsim, x1=1:nsim, y0=est_mu[2,1,]-1.96*est_mu[2,2,], y1=est_mu[2,1,]+1.96*est_mu[2,2,])
 count2 <- length(which(est_mu[2,1,]-1.96*est_mu[2,2,] < mu & est_mu[2,1,]+1.96*est_mu[2,2,] > mu))
+mean2 <- mean(est_mu[2,1,])
 abline(h=mu, col="red", lwd=2)
 mtext(side=1, line=-2, "Among-site variability", font=2)
 
@@ -144,6 +152,7 @@ mtext(side=1, line=-2, "Among-site variability", font=2)
 plot(est_mu[3,1,], ylim=c(1.6, 2.9), pch=19, xaxs="i", yaxs="i")
 segments(x0=1:nsim, x1=1:nsim, y0=est_mu[3,1,]-1.96*est_mu[3,2,], y1=est_mu[3,1,]+1.96*est_mu[3,2,])
 count3 <- length(which(est_mu[3,1,]-1.96*est_mu[3,2,] < mu & est_mu[3,1,]+1.96*est_mu[3,2,] > mu))
+mean3 <- mean(est_mu[3,1,])
 abline(h=mu, col="red", lwd=2)
 mtext(side=3, line=-2, "Overdispersion", font=2)
 
@@ -151,8 +160,10 @@ mtext(side=3, line=-2, "Overdispersion", font=2)
 plot(est_mu[4,1,], ylim=c(1.6, 2.9), yaxt="n", pch=19, xaxs="i", yaxs="i")
 segments(x0=1:nsim, x1=1:nsim, y0=est_mu[4,1,]-1.96*est_mu[4,2,], y1=est_mu[4,1,]+1.96*est_mu[4,2,])
 count4 <- length(which(est_mu[4,1,]-1.96*est_mu[4,2,] < mu & est_mu[4,1,]+1.96*est_mu[4,2,] > mu))
+mean4 <- mean(est_mu[4,1,])
 abline(h=mu, col="red", lwd=2)
 mtext(side=3, line=-3, "Among-site variability \nand overdispersion", font=2)
 
 mtext(side=1, "Simulated Dataset", outer=TRUE, line=3)
 mtext(side=2, "Estimate", outer=TRUE, line=3)
+dev.off()
