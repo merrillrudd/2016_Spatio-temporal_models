@@ -25,15 +25,21 @@ sig_y <- sqrt(var_y) ## standard deviation - overdispersion
 #############################
 ## data generation
 #############################
-set.seed(1)
-ldens <- rnorm(nsites, mu, sig_s)
 
+sim_index <- rep(0:(nsites-1), each=nobs)
+
+## density at each site
+set.seed(1)
+log_lambda <- mu + rnorm(nsites, 0, sig_s)
+# log_lambda <- rnorm(nsites, mu, sig_s)
+
+## overdispersion
 set.seed(2)
-lobs <- unlist(lapply(1:nsites, function(x) rnorm(nobs, ldens[x], sig_y)))
+log_ybar <- log_lambda[(sim_index+1)] + rnorm(tobs, 0, sig_y)
+# log_ybar <- unlist(lapply(1:nsites, function(x) rnorm(nobs, log_lambda[x], sig_y)))
 
 set.seed(3)
-sim_counts <- rpois(tobs, exp(lobs))
-sim_index <- as.vector(sapply(1:nsites, function(x) rep(x-1,nobs)))
+y_j <- rpois(tobs, exp(log_ybar))
 
 ##############################
 ## setup estimation models
@@ -42,7 +48,7 @@ sim_index <- as.vector(sapply(1:nsites, function(x) rep(x-1,nobs)))
 dyn.load( dynlib("glmm_hw") )
 
 ## setup input lists
-Data <- lapply(1:4, function(x) list(model=x, tobs=tobs, nsites=nsites, y_j=sim_counts, site_j=sim_index))
+Data <- lapply(1:4, function(x) list(model=x, tobs=tobs, nsites=nsites, y_j=y_j, site_j=sim_index))
 
 Parameters <- list("mu"=mu, "logsig_s"=log(sig_s), "logsig_y"=log(sig_y), "tau"=rep(0,nsites), "epsilon"=rep(0, tobs))
 
@@ -82,16 +88,16 @@ model4 <- runModel(data=Data[[4]], parameters=Parameters, random=Random[[4]],map
 
 ### plot predicted vs. observed counts
 par(mfrow=c(2,2))
-plot(sim_index, sim_counts, pch=16)
+plot(sim_index, y_j, pch=16)
 points(sim_index, model1$Report$pred_j, col="blue", lwd=2, cex=1.2)
 
-plot(sim_index, sim_counts, pch=16)
+plot(sim_index, y_j, pch=16)
 points(sim_index, model2$Report$pred_j, col="blue", lwd=2, cex=1.2)
 
-plot(sim_index, sim_counts, pch=16)
+plot(sim_index, y_j, pch=16)
 points(sim_index, model3$Report$pred_j, col="blue", lwd=2, cex=1.2)
 
-plot(sim_index, sim_counts, pch=16)
+plot(sim_index, y_j, pch=16)
 points(sim_index, model4$Report$pred_j, col="blue", lwd=2, cex=1.2)
 
 
@@ -102,7 +108,7 @@ points(sim_index, model4$Report$pred_j, col="blue", lwd=2, cex=1.2)
 ## generate 100 datasets
 nsim <- 100
 set.seed(3)
-simdata <- lapply(1:nsim, function(x) rpois(tobs, exp(lobs)))
+simdata <- lapply(1:nsim, function(x) rpois(tobs, exp(log_ybar)))
 
 ## store estimates and SE for mu
 est_mu <- array(NA, dim=c(4, 2, nsim))
