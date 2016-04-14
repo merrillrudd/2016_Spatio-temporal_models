@@ -28,7 +28,8 @@ Type nll = 0.0; // initialize negative log likelihood
 
 // process model:
 for(int i = 1; i < n; i++){
-    Type m = a*u[i-1] ;    //linear model
+	//linear model
+    Type m = a*u[i-1] ;    // calculated mean of the process, m keeping track of predicted value, state at time t-1, recast every time the loop goes through 
   nll -= dnorm(u[i], m, sigma_proc, true); //likelihood for random effects
 }
 

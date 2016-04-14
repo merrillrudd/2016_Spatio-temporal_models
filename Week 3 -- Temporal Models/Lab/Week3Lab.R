@@ -2,6 +2,7 @@
 # Week 3 Lab
 # Temporal models
 # 
+setwd("C:\\Git_Projects\\2016_Spatio-temporal_models\\Week 3 -- Temporal Models\\Lab")
 
 
 ######
@@ -32,9 +33,10 @@ co2.rem<-co2.stl$time.series[,3]
 
 #Evaluate remainder for AR and MA structure
 acf(co2.rem)  #does not suggest MA
-acf(co2.rem, type = "partial")
+## partial acf - lags having removed the effects of shorter lags
+acf(co2.rem, type = "partial") 
 co2.ar<- ar(co2.rem, method = "mle")
-plot(0:(length(co2.ar$aic) - 1), co2.ar$aic, xlab = "Order", ylab = "AIC")
+plot(0:(length(co2.ar$aic) - 1), co2.ar$aic, xlab = "Order", ylab = "AIC", ylim=c(0,250))
 
 #fit the AR model
 co2.ar.model<- arima(co2.rem, order = c(9,0,0), method = "ML")
@@ -62,12 +64,12 @@ co2.hi<- exp(co2.season.trend.for + co2.ar.for$pred + 1.96*co2.ar.for$se)
 co2.obs<- window(all.ts, start = c(2013, 1), end = c(2015, 12) )
 
 #Plot predictions and observed data
+par(mfrow=c(1,1))
 plot(co2.mean, ylim = c(390, 405), ylab = "CO2 ppm" )
 lines(co2.low, lty = 3)
 lines(co2.hi, lty = 3)
 lines(co2.obs, col = 2)
 legend("topleft", c("Model", "Observed"), lty = c(1,1), col = c(1,2))
-
 
 
 ######
@@ -118,6 +120,9 @@ points(sim$y, pch = 'o')
   # extract estimated process:
   u <- summary(sd, "random")[, "Estimate"]
   u_se <- summary(sd, "random")[, "Std. Error"]
+
+  plot(u, type="l", lwd=2)
+  polygon(x=c(1:length(u_se), length(u_se):1), y=c(u-u_se, rev(u)+rev(u_se)), col=rgb(1,0,0,0.5))
   
  
   
