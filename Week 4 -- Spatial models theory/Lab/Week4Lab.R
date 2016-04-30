@@ -1,6 +1,7 @@
 #Spatiotemporal models for ecologists
 #Week 4 Lab
 #Geostatistical models
+setwd("C:\\Git_Projects\\2016_Spatio-temporal_models\\Week 4 -- Spatial models theory\\Lab")
 
 #generate a spatial data set that has a trend and spatial autocorrelation
 #trend has a spatially correlated covariate
