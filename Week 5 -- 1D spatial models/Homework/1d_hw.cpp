@@ -93,6 +93,11 @@ Type objective_function<Type>::operator() ()
   REPORT( rho );
   REPORT( linf_i );
   REPORT( pred_l_i );
+  REPORT( l0 );
+  REPORT( beta0 );
+  REPORT( betaS );
+  REPORT( vbk );
+  REPORT( epsilon_i );
 
   return jnll;
 }
