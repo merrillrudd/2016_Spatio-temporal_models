@@ -87,3 +87,23 @@ abline(h=0, lty=2)
 axis(1, at=c(1,2), labels=c("Spatial trend", "No spatial trend"))
 mtext("Model", side=1, line=3)
 mtext("Root Mean Squared Error", side=2, line=3)
+
+nobs <- 100
+niter <- 100
+set.seed(123)
+rmse_spatial_v2 <- rmse_nonspatial_v2 <- rep(NA, niter)
+for(i in 1:niter){
+	sim <- Sim_Fn(n_i=nobs)
+
+	rmse_spatial_v2[i] <- run_model(sim=sim, nobs=nobs, spatial=TRUE)
+	rmse_nonspatial_v2[i] <- run_model(sim=sim, nobs=nobs, spatial=FALSE)
+}
+end <- Sys.time() - start
+
+rmse1_adj_v2 <- rmse_spatial_v2
+rmse2_adj_v2 <- rmse_nonspatial_v2
+boxplot(rmse1_adj_v2, rmse2_adj_v2, ylim=c(-0.1, max(c(rmse1_adj_v2, rmse2_adj_v2))))
+abline(h=0, lty=2)
+axis(1, at=c(1,2), labels=c("Spatial trend", "No spatial trend"))
+mtext("Model", side=1, line=3)
+mtext("Root Mean Squared Error", side=2, line=3)
