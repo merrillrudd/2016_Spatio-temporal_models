@@ -46,6 +46,8 @@ Type objective_function<Type>::operator() ()
   Type SigmaE = 1 / sqrt(4 * M_PI * exp(2*ln_tau_E) * exp(2*ln_kappa));
 
   // Probability of random effects
+  // GMRF takes the precision matrix (or sparse matrix) and gives density, assumes mean 0
+  // MVNORM takes the covariance matrix and gives the density
   Eigen::SparseMatrix<Type> Q = exp(4*ln_kappa)*M0 + Type(2.0)*exp(2*ln_kappa)*M1 + M2;
   jnll_comp(1) += SCALE( GMRF(Q), 1/exp(ln_tau_O) )( omega_s );
   for( int t=0; t<n_t; t++){

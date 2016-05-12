@@ -1,5 +1,5 @@
 
-setwd( "C:/Users/James.Thorson/Desktop/Project_git/2016_classes_private/Spatio-temporal models/Week 7 -- spatiotemporal models/Lecture/")
+setwd("C:\\Git_Projects\\2016_Spatio-temporal_models\\Week 7 -- spatiotemporal models\\Lecture")
 
 # Libraries and functions
 library( TMB )
