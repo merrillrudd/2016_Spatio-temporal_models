@@ -40,7 +40,11 @@ source( "Sim_Gompertz_Fn.R" )
 # n_years=10; n_stations=100; SpatialScale=0.1; SD_O=0.5; SD_E=0.2; SD_extra=0; rho=0.8; logMeanDens=1; phi=NULL; Loc=NULL
 Sim_List = Sim_Gompertz_Fn( n_years=10, n_stations=100, SpatialScale=0.1, SD_O=0.4, SD_E=0.2, SD_extra=0, rho=0.5, logMeanDens=1, phi=0.0, Loc=NULL )
 DF = Sim_List[["DF"]]
+<<<<<<< HEAD
 loc_xy_orig <- loc_xy <- Sim_List[["Loc"]]
+=======
+loc_xy_orig = loc_xy = Sim_List[["Loc"]]
+>>>>>>> 0261e1fb11949c68a97f61af493ecae3208c19ae
 
 # Reduce number of stations -- OPTIONAL
 n_knots = 50
@@ -52,8 +56,13 @@ if( n_knots < nrow(loc_xy) ){
   DF[,'Site'] = knots_xy$cluster[DF[,'Site']]
 }
 
+<<<<<<< HEAD
 plot(loc_xy_orig, cex=2, pch=20)
 points(loc_xy, cex=2, pch=20, col="red")
+=======
+plot( loc_xy_orig, cex=2, pch=20 )
+points( loc_xy, cex=2, pch=20, col="red")
+>>>>>>> 0261e1fb11949c68a97f61af493ecae3208c19ae
 
 # Build SPDE object using INLA (must pass mesh$idx$loc when supplying Boundary)
 mesh = inla.mesh.create( loc_xy )
