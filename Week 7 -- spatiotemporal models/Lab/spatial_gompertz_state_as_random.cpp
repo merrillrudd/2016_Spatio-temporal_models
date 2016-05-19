@@ -68,11 +68,14 @@ Type objective_function<Type>::operator() ()
   }
   
   // Calculate expectation for state-vector
+  // THIS IS WHERE YOU CHANGE DETERMINISTIC SKELETON
   for(int x=0; x<n_x; x++){
   for(int t=0; t<n_t; t++){
-    if(t==0) log_Dpred_xt(x,t) = phi + Equil_x(x);
-    if(t>=1) log_Dpred_xt(x,t) = rho*log_D_xt(x,t-1) + eta_x(x) + Omega_x(x); // modify following line with a new production function (e.g. Schaefer model)
-
+    if(t==0) log_Dpred_xt(x,t) = phi + Equil_x(x); // prediction given deterministic skeleton
+    // if(t>=1) log_Dpred_xt(x,t) = rho*log_D_xt(x,t-1) + eta_x(x) + Omega_x(x); // modify following line with a new production function (e.g. Schaefer model) -- deterministic skeleton
+    if(t>=1) log_Dpred_xt(x,t) = log_D_xt(x,t-1) + eta_x(x) + Omega_x(x) - rho*exp(log_D_xt(x,t-1)); // Ricker
+      //  mean length this year some function from last year -- function of linearly incremental grwoth and fishing intensity
+      // abundance in each length category every year, or variable as mean length
   }}
   
   // Probability of Gaussian-Markov random fields (GMRFs)
