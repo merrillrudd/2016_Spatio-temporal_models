@@ -113,16 +113,15 @@ Type objective_function<Type>::operator() ()
   for(int t=1; t<n_t; t++){
     for(int r=0; r<n_r; r++){
       u_rt(r,t) = exp( ln_u_gt(r,t) );
-      //upred_rt(r,t) = u_rt(r,t-1) * exp( alpha - beta*u_rt(r,t-1) + Omega_g(r) );
       upred_rt(r,t) = u_rt(r,t-1);
     }
     for(int tdev=0; tdev<n_tdiv; tdev++){
-      upred_rt.col(t) = Mdiv_sparse * upred_rt.col(t).matrix();
+      ln_uhat_gt.col(t) = Mdiv_sparse * ln_uhat_gt.col(t).matrix();
     }
     for(int r=0; r<n_r; r++){
-      //ln_uhat_gt(r,t) = log( upred_rt(r,t) );
       if(Options_vec(1)==0) ln_uhat_gt(r,t) = log( upred_rt(r,t) * exp(alpha - beta*log(upred_rt(r,t)) + Omega_g(r)) );
       if(Options_vec(1)==1) ln_uhat_gt(r,t) = log( upred_rt(r,t) * exp(alpha - beta*upred_rt(r,t) + Omega_g(r)) );
+      if(Options_vec(1)==2) // SOME NEW PRODUCTION FUNCTION
     }
     for(int g=n_r; g<n_g; g++) ln_uhat_gt(g,t) = 0.0;
   }
@@ -141,7 +140,7 @@ Type objective_function<Type>::operator() ()
   for(int i=0; i<n_i; i++){
     // Calculate deviance
     chat_i(i) = exp(ln_u_gt(r_i(i),t_i(i)));
-    NLL_i(i) = -1 * dpois(c_i(i), chat_i(i), true);
+    NLL_i(i) = -1 * dpois( c_i(i), chat_i(i), true);
   }
   NLL_c(2) = NLL_i.sum();
   NLL = NLL_c.sum();
