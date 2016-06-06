@@ -1,0 +1,6 @@
+Single example across chapters, starting simple
+Eliminate typos
+Start from OLS comparison
+Slower intro to CPP code for TMB
+Important to have simulation component for project
+Drop movement from lecture, and leave in book (maybe)

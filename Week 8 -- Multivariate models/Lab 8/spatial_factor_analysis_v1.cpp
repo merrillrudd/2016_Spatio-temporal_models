@@ -25,6 +25,8 @@ Type objective_function<Type>::operator() ()
   PARAMETER_MATRIX(beta_jp); // intercept for each species
   PARAMETER_VECTOR(Loadings_vec); // interaction between species on each factor
   PARAMETER(log_kappa);
+
+  // Random effect
   PARAMETER_ARRAY(Omega_xf);
 
   //
@@ -48,8 +50,13 @@ Type objective_function<Type>::operator() ()
     }
   }
 
+<<<<<<< HEAD
   // Spatial variables - every column of Omega_xf follows Matern 2D spatial process - treat as independent
   Type log_tau = log(1 / (exp(log_kappa) * sqrt(4*M_PI)) );  // Ensures that MargSD = 1, helps with identifiability condition
+=======
+  // Spatial variables
+  Type log_tau = log( 1 / (exp(log_kappa) * sqrt(4*M_PI)) );  // Ensures that MargSD = 1
+>>>>>>> 7803d2b63b3db7fc7a4d54ed1d5a4742db226cce
   Type Range = sqrt(8) / exp( log_kappa );
   Eigen::SparseMatrix<Type> Q = exp(log_kappa*4)*M0 + Type(2.0)*exp(log_kappa*2)*M1 + M2;
   for(int f=0; f<n_f; f++){
