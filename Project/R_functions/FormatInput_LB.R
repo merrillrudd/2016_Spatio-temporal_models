@@ -74,6 +74,12 @@ FormatInput_LB <- function(Nyears, DataList, linf, vbk, t0, M, AgeMax,
             Map[["log_F_sd"]] <- factor(Map[["log_F_sd"]])
             Map[["S95"]] <- NA
             Map[["S95"]] <- factor(Map[["S95"]])
+            Map[["log_linf"]] <- NA
+            Map[["log_linf"]] <- factor(Map[["log_linf"]])
+            Map[["log_sigma_linf"]] <- NA
+            Map[["log_sigma_linf"]] <- factor(Map[["log_sigma_linf"]])
+
+
 
         if(grepl("Poor_Comp", model)){
             Map[["log_q_I"]] <- NA
