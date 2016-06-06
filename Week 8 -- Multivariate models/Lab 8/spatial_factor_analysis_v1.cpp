@@ -22,19 +22,19 @@ Type objective_function<Type>::operator() ()
   DATA_SPARSE_MATRIX(M2);
 
   // Parameters
-  PARAMETER_MATRIX(beta_jp);
-  PARAMETER_VECTOR(Loadings_vec);
+  PARAMETER_MATRIX(beta_jp); // intercept for each species
+  PARAMETER_VECTOR(Loadings_vec); // interaction between species on each factor
   PARAMETER(log_kappa);
   PARAMETER_ARRAY(Omega_xf);
 
   //
   using namespace density;
   int n_p = Y_sp.row(0).size();    // n_p is number of species
-  int n_s = Y_sp.col(0).size();
+  int n_s = Y_sp.col(0).size();   
   int n_j = X_sj.row(0).size();
   Type jnll = 0;
 
-  // Unpack loadings matrix
+  // Unpack loadings matrix - build cholesky matrix
   matrix<Type> Loadings_pf(n_p, n_f);
   int Count = 0;
   for(int f=0; f<n_f; f++){
@@ -48,8 +48,8 @@ Type objective_function<Type>::operator() ()
     }
   }
 
-  // Spatial variables
-  Type log_tau = log(1 / (exp(log_kappa) * sqrt(4*M_PI)) );  // Ensures that MargSD = 1
+  // Spatial variables - every column of Omega_xf follows Matern 2D spatial process - treat as independent
+  Type log_tau = log(1 / (exp(log_kappa) * sqrt(4*M_PI)) );  // Ensures that MargSD = 1, helps with identifiability condition
   Type Range = sqrt(8) / exp( log_kappa );
   Eigen::SparseMatrix<Type> Q = exp(log_kappa*4)*M0 + Type(2.0)*exp(log_kappa*2)*M1 + M2;
   for(int f=0; f<n_f; f++){
@@ -59,7 +59,7 @@ Type objective_function<Type>::operator() ()
   // Likelihood contribution from observations
   matrix<Type> ln_yexp_sp( n_s, n_p );
   matrix<Type> eta_sp( n_s, n_p );
-  eta_sp = X_sj * beta_jp;
+  eta_sp = X_sj * beta_jp; // design matrix of covariates and beta= intercept for each species
   for(int s=0; s<n_s; s++){
   for(int p=0; p<n_p; p++){
     // Predictor

@@ -109,3 +109,5 @@ SD = sdreport(Obj)
 Report = Obj$report()
 Report$Loadings_pf
 Cov_pp = Report$Loadings_pf %*% t(Report$Loadings_pf)
+
+# Another interesting project with this dataset would have been to predict species counts by site for future years using the community distribution models. Perhaps some factors that could be included in the analysis could be related to the variation in management strategy, gear type, and/or number of vessels by area. The integration of predicting counts or size for multiple species at different areas would be really useful for management in Kenya, and if I can figure out how to approach this problem in the future I think this would be a priority project. 
