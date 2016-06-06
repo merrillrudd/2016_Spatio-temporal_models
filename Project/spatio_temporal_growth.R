@@ -1,6 +1,7 @@
 rm(list=ls())
 
-data_dir <- "C:\\Git_Projects\\2016_Spatio-temporal_models\\Project"
+# data_dir <- "C:\\Git_Projects\\2016_Spatio-temporal_models\\Project"
+data_dir <- "F:\\Merrill\\Git_Projects\\2016_Spatio-temporal_models\\Project"
 setwd(data_dir)
 source("R_functions\\functions.R")
 
@@ -14,7 +15,7 @@ require(TMB)
 
 ############ Part 1 ###############
 ### QUESTION
-### Is there bias in estimates of stock status when there is spatial variation in growth, but it is ignore d in the assessment?
+### Is there bias in estimates of stock status when there is spatial variation in growth, but it is ignored in the assessment?
 
 ### PERFORMANCE MEASURE
 #### the ability to estimate the mean SPR across sites with spatial variation
@@ -31,8 +32,8 @@ run_exe <- file.path(data_dir, "inst", "executables")
 Version <- "lb_statespace_v5"
 setwd(run_exe)
 dyn.unload( paste0(Version,".dll") )
-# file.remove( paste(Version,c(".dll",".o"),sep="") )
-# compile(paste0(Version, ".cpp"))
+file.remove( paste(Version,c(".dll",".o"),sep="") )
+compile(paste0(Version, ".cpp"))
 
 ## directories for results
 pool_space_dir <- file.path(data_dir, "pool_space")
@@ -90,61 +91,40 @@ plot(spatial_sim$y_i, spatial_sim$linf_i, xlab="Latitude", ylab="Linf value")
 ## model path
 modpath_nospace <- file.path(data_dir, "pool_space", "nospace_dir")
 modpath_space <- file.path(data_dir, "pool_space", "space_dir")
+modpath_vec <- c(modpath_nospace, modpath_space)
+mod_names <- c("No spatial structure", "Spatial structure")
 
 ## life history - truth without spatial structure - deterministic across iterations
 lh_nospace <- create_lh_list(lh="Siganus_sutor", selex="asymptotic")
 ## data inputs - same across scenarios, assumes no spatial differences in growth
 dat_input <- create_inputs(param=FALSE, val=FALSE, lh_dat=lh_nospace)
 
-niter <- 100
+niter <- 1000
 
 start <- Sys.time()
 
-## generate data - no spatial structure in true population
-generateData(modpath=modpath_nospace, itervec=1:niter, spatial=FALSE, Fdynamics="Constant", LType=1)
-generateData(modpath=modpath_nospace, itervec=1:niter, spatial=FALSE, Fdynamics="Endogenous", LType=1)
+Fdyn_vec <- c("Constant", "Endogenous", "Ramp")
 
+## generate data - no spatial structure in true population
+sapply(1:length(Fdyn_vec), function(x) generateData(modpath=modpath_nospace, itervec=1:niter, spatial=FALSE, Fdynamics=Fdyn_vec[x]))
 
 ## generate data - spatial structure of linf in true population
-generateData(modpath=modpath_space, itervec=1:niter, spatial=TRUE, Fdynamics="Constant", LType=1)
-generateData(modpath=modpath_space, itervec=1:niter, spatial=TRUE, Fdynamics="Endogenous", LType=1)
-
+sapply(1:length(Fdyn_vec), function(x) generateData(modpath=modpath_space, itervec=1:niter, spatial=TRUE, Fdynamics=Fdyn_vec[x], LType=0))
 
 ## run model - no spatial structure in true population
-runModel(modpath=modpath_nospace, itervec=1:niter, data_input=dat_input, Fdynamics="Constant")
-runModel(modpath=modpath_nospace, itervec=1:niter, data_input=dat_input, Fdynamics="Endogenous")
+sapply(1:length(Fdyn_vec), function(x) runModel(modpath=modpath_nospace, itervec=1:niter, data_input=dat_input, Fdynamics=Fdyn_vec[x]))
 
-	
 ## run model - spatial structure of linf in true population
-runModel(modpath=modpath_space, itervec=1:niter, data_input=dat_input, Fdynamics="Constant")
-runModel(modpath=modpath_space, itervec=1:niter, data_input=dat_input, Fdynamics="Endogenous")
+sapply(1:length(Fdyn_vec), function(x) runModel(modpath=modpath_space, itervec=1:niter, data_input=dat_input, Fdynamics=Fdyn_vec[x]))
+
 
 end <- Sys.time() - start
 
+par(mfrow=c(3,1), mar=c(0,0,0,0), omi=c(1,1,1,1))
+res_constant <- SPRerror(modpath_vec=modpath_vec, niter=niter, Fdyn="Constant", mod_names=mod_names)
+res_endogenous <- SPRerror(modpath_vec=modpath_vec, niter=niter, Fdyn="Endogenous", mod_names=mod_names)
+res_ramp <- SPRerror(modpath_vec=modpath_vec, niter=niter, Fdyn="Ramp", mod_names=mod_names)
 
-SPR_re_ns <- SPR_re_s_mean <- rep(NA, length=niter)
-SPR_re_s <- matrix(NA, nrow=niter, ncol=n_i)
-for(i in 1:niter){
-
-	Rep_ns <- readRDS(file.path(modpath_nospace, "F_Constant", i, "Report.rds"))
-	Rep_s <- readRDS(file.path(modpath_space, "F_Constant", i, "Report.rds"))
-
-	True_ns <- readRDS(file.path(modpath_nospace, "F_Constant", i, "True.rds"))
-
-	SPR_ns <- with(Rep_ns, calc_ref(Mat_a=Mat_a, W_a=W_a, M=M, S_a=S_a, R0=exp(beta), F=F_t[length(F_t)], ref=FALSE))
-	SPR_s <- with(Rep_s, calc_ref(Mat_a=Mat_a, W_a=W_a, M=M, S_a=S_a, R0=exp(beta), F=F_t[length(F_t)], ref=FALSE))
-
-	SPR_true_ns <- True_ns$SPR
-	SPR_true_s <- readRDS(file.path(modpath_space, "F_Constant", i, "SPR_site.rds"))
-	SPR_true_st <- mean(SPR_true_s)
-
-	SPR_re_ns[i] <- (SPR_ns - SPR_true_ns)/SPR_true_ns
-	SPR_re_s_mean[i] <- (SPR_s - SPR_true_st)/SPR_true_st
-
-	SPR_re_s[i,] <- (SPR_s - SPR_true_s)/SPR_true_s
-}
-boxplot(SPR_re_ns, SPR_re_s_mean, ylim=c(-1,1))
-abline(h=0, lty=2, col="red")
 
 
 setwd(data_dir)
@@ -172,7 +152,8 @@ plotFIT(compare_quant=c( "ML", "R", "F", "D"), compare_type="base_values", scena
 ## EM6 = estimate variable R and linf (estimate only 1 F)
 rm(list=ls())
 
-data_dir <- "C:\\Git_Projects\\2016_Spatio-temporal_models\\Project"
+# data_dir <- "C:\\Git_Projects\\2016_Spatio-temporal_models\\Project"
+data_dir <- "F:\\Merrill\\Git_Projects\\2016_Spatio-temporal_models\\Project"
 setwd(data_dir)
 source("R_functions\\functions.R")
 
@@ -190,8 +171,8 @@ run_exe <- file.path(data_dir, "inst", "executables")
 Version <- "lb_statespace_v6"
 setwd(run_exe)
 dyn.unload( paste0(Version,".dll") )
-# file.remove( paste(Version,c(".dll",".o"),sep="") )
-# compile(paste0(Version, ".cpp"))
+file.remove( paste(Version,c(".dll",".o"),sep="") )
+compile(paste0(Version, ".cpp"))
 
 ## directories for results
 estimate_variability <- file.path(data_dir, "estimate_variability")
@@ -265,7 +246,7 @@ niter <- 1
 
 ## generate data - spatial structure of linf in true population, Linf pooled (not accounting for spatial growth in EM)
 generateData(modpath=modpath_timeF, itervec=1:niter, spatial=TRUE, Fdynamics="Constant", LType=0)
-	check <- readRDS(file.path(modpath_timeF_timeR, "F_constant", "1", "True.rds"))
+	check <- readRDS(file.path(modpath_timeF, "F_constant", "1", "True.rds"))
 ## run model - time-varying F
 runModel(modpath=modpath_timeF, itervec=1:niter, data_input=dat_input, Fdynamics="Constant", RecType=1, FType=0, LType=1, site=1)
 
