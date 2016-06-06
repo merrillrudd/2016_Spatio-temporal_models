@@ -1,6 +1,6 @@
 rm(list=ls())
 
-data_dir <- "C:\\Git_Projects\\kenyan_reef_fish\\Spatial_project"
+data_dir <- "C:\\Git_Projects\\2016_Spatio-temporal_models\\Project"
 setwd(data_dir)
 source("R_functions\\functions.R")
 
@@ -172,7 +172,7 @@ plotFIT(compare_quant=c( "ML", "R", "F", "D"), compare_type="base_values", scena
 ## EM6 = estimate variable R and linf (estimate only 1 F)
 rm(list=ls())
 
-data_dir <- "C:\\Git_Projects\\kenyan_reef_fish\\Spatial_project"
+data_dir <- "C:\\Git_Projects\\2016_Spatio-temporal_models\\Project"
 setwd(data_dir)
 source("R_functions\\functions.R")
 
@@ -183,6 +183,7 @@ require(RColorBrewer)
 require(spdep)
 require(reshape2)
 require(TMB)
+
 ## locate and compile executable
 run_exe <- file.path(data_dir, "inst", "executables")
 
@@ -263,10 +264,10 @@ dat_input <- create_inputs(param=FALSE, val=FALSE, lh_dat=lh_nospace)
 niter <- 1
 
 ## generate data - spatial structure of linf in true population, Linf pooled (not accounting for spatial growth in EM)
-generateData(modpath=modpath_timeF_timeR, itervec=1:niter, spatial=TRUE, Fdynamics="Constant", LType=0)
+generateData(modpath=modpath_timeF, itervec=1:niter, spatial=TRUE, Fdynamics="Constant", LType=0)
 	check <- readRDS(file.path(modpath_timeF_timeR, "F_constant", "1", "True.rds"))
-## run model - time-varying F and R
-runModel(modpath=modpath_timeF_timeR, itervec=1:niter, data_input=dat_input, Fdynamics="Constant", RecType=0, FType=0, LType=1, site=1:n_i)
+## run model - time-varying F
+runModel(modpath=modpath_timeF, itervec=1:niter, data_input=dat_input, Fdynamics="Constant", RecType=1, FType=0, LType=1, site=1)
 
 # 	setwd(data_dir)
 # 	source("R_functions\\functions.R")
