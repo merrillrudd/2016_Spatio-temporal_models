@@ -1,4 +1,4 @@
-runModel <- function(modpath, itervec, data_input, Fdynamics, RecType, FType, LType, site){
+runModel <- function(modpath, itervec, data_input, Fdynamics, RecType=0, FType=0, LType=1, site=1){
 
 Fdyn_dir <- file.path(modpath, paste0("F_", Fdynamics))
 

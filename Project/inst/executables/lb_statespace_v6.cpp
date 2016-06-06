@@ -127,7 +127,7 @@ Type objective_function<Type>::operator() ()
   // ========= Convert inputs  =============================
   vector<Type> linf_s(n_s);
   for(int s=0;s<n_s;s++){
-    linf_s(s) = exp(log_linf) * exp(Eps_input(s) - pow(sigma_linf,2)/Type(2));
+    linf_s(s) = exp(log_linf) * exp(Eps_input(s));
   }
 
   matrix<Type> L_a(n_s,AgeMax+1);

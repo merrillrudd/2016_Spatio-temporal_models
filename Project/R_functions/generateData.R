@@ -1,4 +1,4 @@
-generateData <- function(modpath, itervec, spatial, Fdynamics, Rdynamics="Constant", LType){
+generateData <- function(modpath, itervec, spatial, Fdynamics, Rdynamics="Constant", LType=0){
 
   ## life history - truth without spatial structure - deterministic across iterations
   lh_nospace <- create_lh_list(lh="Siganus_sutor", selex="asymptotic")
