@@ -92,7 +92,7 @@ plot(spatial_sim$y_i, spatial_sim$linf_i, xlab="Latitude", ylab="Linf value")
 modpath_nospace <- file.path(data_dir, "pool_space", "nospace_dir")
 modpath_space <- file.path(data_dir, "pool_space", "space_dir")
 modpath_vec <- c(modpath_nospace, modpath_space)
-mod_names <- c("No spatial structure", "Spatial structure")
+mod_names <- c("No spatial process", "Spatial process pooled")
 
 ## life history - truth without spatial structure - deterministic across iterations
 lh_nospace <- create_lh_list(lh="Siganus_sutor", selex="asymptotic")
@@ -104,6 +104,10 @@ niter <- 1000
 start <- Sys.time()
 
 Fdyn_vec <- c("Constant", "Endogenous", "Ramp")
+
+plotML <- generateData(modpath=modpath_space, itervec=1, spatial=TRUE, Fdynamics="Constant", LType=0, plotML=TRUE)
+plotLF <- generateData(modpath=modpath_space, itervec=1, spatial=TRUE, Fdynamics="Constant", LType=0, plotLF=TRUE)
+plotLFcompare <- generateData(modpath=modpath_space, itervec=1, spatial=TRUE, Fdynamics="Constant", LType=0, plotLF_compare=TRUE)
 
 ## generate data - no spatial structure in true population
 sapply(1:length(Fdyn_vec), function(x) generateData(modpath=modpath_nospace, itervec=1:niter, spatial=FALSE, Fdynamics=Fdyn_vec[x]))
@@ -124,8 +128,21 @@ par(mfrow=c(3,1), mar=c(0,0,0,0), omi=c(1,1,1,1))
 res_constant <- SPRerror(modpath_vec=modpath_vec, niter=niter, Fdyn="Constant", mod_names=mod_names)
 res_endogenous <- SPRerror(modpath_vec=modpath_vec, niter=niter, Fdyn="Endogenous", mod_names=mod_names)
 res_ramp <- SPRerror(modpath_vec=modpath_vec, niter=niter, Fdyn="Ramp", mod_names=mod_names)
+axis(1, at=c(1,2), labels=mod_names, cex.axis=2)
+mtext("Relative Error", side=2, line=2, cex=1.3, outer=TRUE)
 
-
+linf_sites <- y_sites <- matrix(NA, nrow=n_i, ncol=64)
+for(i in 1:64){
+	sim <- readRDS(file.path(modpath_space, "F_Constant", i, "spatial_sim.rds"))
+	linf_sites[,i] <- sim$linf_i
+	y_sites[,i] <- sim$y_i
+}
+par(mfrow=c(8,8), mar=c(0,0,0,0), omi=c(1,1,1,1))
+for(i in 1:64){
+	plot(y_sites[,i], linf_sites[,i],axes=F, ann=F, ylim=c(min(linf_sites), max(linf_sites)), pch=19)
+	box(col="gray")
+	abline(h=linf, col="red", lty=2)
+}
 
 setwd(data_dir)
 source("R_functions\\functions.R")
@@ -261,29 +278,9 @@ runModel(modpath=modpath_timeF, itervec=1:niter, data_input=dat_input, Fdynamics
 # 	plot(x=spatial_sim$y_i, y=spatial_sim$linf_i)
 # 	plot(x=1:length(DataList_site), y=sapply(1:length(DataList_site), function(x) DataList_site[[x]]$SPR), ylim=c(0,1))
 
-# ## length frequency in the last year at each site
-# par(mfrow=c(4,4), mar=c(0,0,0,0), omi=c(1,1,1,1))
-# for(i in 1:length(LF_site)){
-# 	barplot(LF_site[[i]][20,], axes=F)
-# }
 
-# # ## plot mean length at each site
-# # # png("SIM_Mean_length_by_site_year.png", res=200, units="in", width=12, height=9)
-# par(mfrow=c(4,4), mar=c(0,0,0,0), omi=c(1,1,1,1))
-# plot(ML_t_pool, col="red", type="o", pch=17, lwd=2, ylim=c(0,lh$linf), xaxt="n", yaxt="n")
-# axis(2, cex=1.2, las=2)
-# mtext(side=3, "pooled", font=2, line=-1.5)
-# for(i in 1:length(DataList_site)){
-# 	plot(DataList_site[[i]]$ML_t, col="black", pch=19, lwd=2, ylim=c(0,lh$linf), xaxt="n", yaxt="n")
-# 	lines(ML_t_pool, col="red", pch=17, type="o")
-# 	if(i %in% c(12:15)) axis(1, cex=1.2)
-# 	if(i %in% c(4,8,12)) axis(2, cex=1.2, las=2)
-# 	mtext(paste0("site ", i), side=3, font=2, line=-1.5)
-# }
-# legend("bottomright", legend=c("site-specific", "pooled"), pch=c(19,17), col=c("black", "red"))
-# mtext("Year", outer=TRUE, line=3, side=1)
-# mtext("Mean length in catch (cm)", outer=TRUE, line=3,  side=2)
-# # # dev.off()
+
+
 
 ### explore real data
 SSraw <- read.csv(file.path(data_dir, "Siganus_sutor_data.csv"), header=TRUE)
