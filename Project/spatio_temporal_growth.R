@@ -109,7 +109,7 @@ Fdyn_vec <- c("Constant", "Endogenous", "Ramp")
 sapply(1:length(Fdyn_vec), function(x) generateData(modpath=modpath_nospace, itervec=1:niter, spatial=FALSE, Fdynamics=Fdyn_vec[x]))
 
 ## generate data - spatial structure of linf in true population
-sapply(1:length(Fdyn_vec), function(x) generateData(modpath=modpath_space, itervec=1:niter, spatial=TRUE, Fdynamics=Fdyn_vec[x], LType=0))
+sapply(1:length(Fdyn_vec), function(x) generateData(modpath=modpath_space, itervec=1:niter, spatial=TRUE, Fdynamics=Fdyn_vec[x]))
 
 ## run model - no spatial structure in true population
 sapply(1:length(Fdyn_vec), function(x) runModel(modpath=modpath_nospace, itervec=1:niter, data_input=dat_input, Fdynamics=Fdyn_vec[x]))
@@ -152,8 +152,8 @@ plotFIT(compare_quant=c( "ML", "R", "F", "D"), compare_type="base_values", scena
 ## EM6 = estimate variable R and linf (estimate only 1 F)
 rm(list=ls())
 
-# data_dir <- "C:\\Git_Projects\\2016_Spatio-temporal_models\\Project"
-data_dir <- "F:\\Merrill\\Git_Projects\\2016_Spatio-temporal_models\\Project"
+data_dir <- "C:\\Git_Projects\\2016_Spatio-temporal_models\\Project"
+# data_dir <- "F:\\Merrill\\Git_Projects\\2016_Spatio-temporal_models\\Project"
 setwd(data_dir)
 source("R_functions\\functions.R")
 
@@ -171,15 +171,15 @@ run_exe <- file.path(data_dir, "inst", "executables")
 Version <- "lb_statespace_v6"
 setwd(run_exe)
 dyn.unload( paste0(Version,".dll") )
-file.remove( paste(Version,c(".dll",".o"),sep="") )
-compile(paste0(Version, ".cpp"))
+# file.remove( paste(Version,c(".dll",".o"),sep="") )
+# compile(paste0(Version, ".cpp"))
 
 ## directories for results
 estimate_variability <- file.path(data_dir, "estimate_variability")
 dir.create(estimate_variability, showWarnings=FALSE) 
 
-unlink(estimate_variability, TRUE)
-dir.create(estimate_variability, showWarnings=FALSE) 
+# unlink(estimate_variability, TRUE)
+# dir.create(estimate_variability, showWarnings=FALSE) 
 
 timeF <- file.path(estimate_variability, "timeF")
 dir.create(timeF, showWarnings=FALSE)
@@ -219,7 +219,7 @@ REML=FALSE
 
 ## settings - space
 ### simulation of 1D spatial process on growth - from HW5
-n_i <- 15 ##  number of sites
+n_i <- 5 ##  number of sites
 Scale <- 2
 Sigma2 <- 0.1
 SD_spatial <- 0.1
@@ -245,10 +245,29 @@ dat_input <- create_inputs(param=FALSE, val=FALSE, lh_dat=lh_nospace)
 niter <- 1
 
 ## generate data - spatial structure of linf in true population, Linf pooled (not accounting for spatial growth in EM)
-generateData(modpath=modpath_timeF, itervec=1:niter, spatial=TRUE, Fdynamics="Constant", LType=0)
-	check <- readRDS(file.path(modpath_timeF, "F_constant", "1", "True.rds"))
-## run model - time-varying F
-runModel(modpath=modpath_timeF, itervec=1:niter, data_input=dat_input, Fdynamics="Constant", RecType=1, FType=0, LType=1, site=1)
+generateData(modpath=modpath_timeF_timeR, itervec=1:niter, spatial=TRUE, Fdynamics="Constant", LType=1)
+generateData(modpath=modpath_spaceL, itervec=1:niter, spatial=TRUE, Fdynamics="Constant", LType=0)
+	check <- readRDS(file.path(modpath_spaceL, "F_Constant", 1, "True.rds"))
+
+
+# ## run model - time-varying F and R
+modpath <- modpath_spaceL
+itervec <- 1:niter
+data_input <- dat_input
+Fdynamics <- "Constant"
+RecType <- 1
+FType <- 1
+LType <- 0
+site <- 1:n_i
+iter <- 1
+
+runModel(modpath=modpath_timeF_timeR, itervec=1:niter, data_input=dat_input, Fdynamics="Constant", RecType=0, FType=0, LType=1, site=1)
+runModel(modpath=modpath_spaceL, itervec=1:niter, data_input=dat_input, Fdynamics="Constant", RecType=0, FType=1, LType=1, site=1)
+
+res_constant <- SPRerror(modpath_vec=modpath_timeF_timeR, niter=niter, Fdyn="Constant", mod_names="Time-varying F and R")
+
+plotFIT(compare_quant=c( "ML", "R", "F", "D"), compare_type="base_values", scenario_name="No spatial structure", modpath=file.path(modpath_timeF_timeR, "F_Constant"), iter=1)
+
 
 # 	setwd(data_dir)
 # 	source("R_functions\\functions.R")
