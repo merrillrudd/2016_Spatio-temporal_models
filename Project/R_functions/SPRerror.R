@@ -28,9 +28,9 @@ SPRerror <- function(modpath_vec, Fdyn, niter, mod_names){
 	RE <- t(sapply(1:niter, function(x) getRE(modpath_vec=modpath_vec, iter=x)))
 	colnames(RE) <- mod_names
 
-	boxplot(RE, ylim=c(-1,1))
-	mtext(side=3, Fdyn, font=2, line=-1)
-	abline(h=0, lty=2, col="red")
+	boxplot(RE, ylim=c(-1,1.5), xaxt="n", col="steelblue")
+	mtext(side=3, paste0(Fdyn, " True Fishing Mortality"), font=2, line=-3, cex=1.3)
+	abline(h=0, col="goldenrod", lwd=2)
 
 	return(RE)
 }
