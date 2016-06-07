@@ -39,7 +39,9 @@ Type objective_function<Type>::operator() ()
     DATA_VECTOR(LC_yrs); // vector of years of length comp data
     DATA_VECTOR(ML_yrs); // vector of years of mean length data available
     DATA_VECTOR(obs_per_yr); // number of independent observation times annually, likely between 1 and C_t
-    DATA_INTEGER(FType); //0==estimate annual recruitment, 1==single value
+    DATA_INTEGER(RecType); //0== estimate random effects on recruitment, 1== no variation
+    DATA_INTEGER(FType); //0==estimate annual recruitment, 1==mean-length mortality estimator
+    DATA_INTEGER(LType); //0==estimate spatial effects on linf, 1==no spatial linf
     DATA_VECTOR(site);
     DATA_INTEGER(n_s); // number of sites
 
@@ -99,6 +101,7 @@ Type objective_function<Type>::operator() ()
   int a,t,lc,c,i,ml,s;
   Type jnll=0;
   vector<Type> jnll_comp(8);
+  jnll_comp.setZero();
 
   // ======= Transform parameters =========================
   Type q_I = exp(log_q_I);
@@ -110,18 +113,21 @@ Type objective_function<Type>::operator() ()
   Type linf = exp(log_linf);
   Type CV_L = exp(log_CV_L);
   
-
   // ============ Probability of random effects =============
   // recruitment - time-varying
   jnll_comp(0) = 0;
-  for(int t=0;t<n_t;t++){
-    jnll_comp(0) -= dnorm(Nu_input(t), Type(0.0), sigma_R, true);
+  if(RecType==0){
+    for(int t=0;t<n_t;t++){
+      jnll_comp(0) -= dnorm(Nu_input(t), Type(0.0), sigma_R, true);
+    }
   }
 
   // linf - site-varying
   jnll_comp(1) = 0;
-  for(int s=0;s<n_s;t++){
-    jnll_comp(1) -= dnorm(Eps_input(s), Type(0.0), sigma_linf, true);
+  if(LType==0){
+    for(int s=0;s<n_s;t++){
+      jnll_comp(1) -= dnorm(Eps_input(s), Type(0.0), sigma_linf, true);
+    }
   }
 
   // ========= Convert inputs  =============================
@@ -164,6 +170,7 @@ Type objective_function<Type>::operator() ()
       F_t(t) = F_equil;
     }
   }
+
 
   // ============ equilibrium spawning biomass ===============
   Type SB0 = 0;
@@ -272,7 +279,11 @@ Type objective_function<Type>::operator() ()
   array<Type> plb(n_t,n_lb,n_s);
   for(int s=0;s<n_s;s++){
     matrix<Type> plba_temp(AgeMax+1,n_lb);
-    plba_temp = plba.col(s);
+    for(int a=0;a<=AgeMax;a++){
+      for(int l=0;l<n_lb;l++){
+        plba_temp(a,l) = plba.col(s)(l*(AgeMax+1) + a);
+      }
+    }
 
     matrix<Type> plb_init(n_t,n_lb);
     vector<Type> plb_sums(n_t);
@@ -301,7 +312,7 @@ Type objective_function<Type>::operator() ()
     }
     Vul_pop(t) = temp2;
     temp2 = 0;
-    for(int s=0;s<n_t;s++){
+    for(int s=0;s<n_s;s++){
       for(int l=0;l<n_lb;l++){
        temp += Vul_pop(t)*plb(t,l,s)*lbmids(l);
       }
@@ -310,23 +321,39 @@ Type objective_function<Type>::operator() ()
     }
   }
 
-  // ========= Build likelihood ==============================
+  // // ========= Build likelihood ==============================
 
   // Likelihood contribution from observations
   vector<Type> log_pL_t(n_t);
+  log_pL_t.setZero();
   if(n_lc>0){
-    vector<Type> dat(n_lb);
-    vector<Type> dat1(n_lb);
-    vector<Type> prob(n_lb);
     for(int t=0;t<n_t;t++){
       log_pL_t(t) = 0;
       for(int s=0;s<n_s;s++){
         matrix<Type> sub_LF(n_lc,n_lb);
         matrix<Type> sub_plb(n_t,n_lb);
-        sub_LF = LF.col(s);
-        sub_plb = plb.col(s);
-
+          for(int l=0;l<n_lb;l++){
+            sub_plb(t,l) = plb.col(s)(l*n_t + t);
+          }
+        if(n_s>1){
+          for(int lt=0;lt<n_lc;lt++){
+            for(int l=0;l<n_lb;l++){
+              sub_LF(lt,l) = LF.col(s)(l*n_lc + lt);
+            }
+          }
+        }
+        if(n_s==1){
+          for(int lt=0;lt<n_lc;lt++){
+            for(int l=0;l<n_lb;l++){
+              sub_LF(lt,l) = LF(l*n_lc + lt);
+            }
+          }
+        }
         for(int lc=0;lc<n_lc;lc++){
+          vector<Type> dat(n_lb);
+          vector<Type> dat1(n_lb);
+          vector<Type> prob(n_lb);
+
           if(LC_yrs(lc)==T_yrs(t)){
             dat1 = sub_LF.row(lc);
             dat = obs_per_yr(t)*(dat1/dat1.sum());
@@ -356,6 +383,7 @@ Type objective_function<Type>::operator() ()
 
 
   vector<Type> log_pI_t(n_t);
+  log_pI_t.setZero();
   if(n_i>0){
     for(int t=0;t<n_t;t++){
       log_pI_t(t) = 0;
@@ -374,6 +402,7 @@ Type objective_function<Type>::operator() ()
   }
 
   vector<Type> log_pC_t(n_t);
+  log_pC_t.setZero();
   if(n_c>0){
     for(int t=0;t<n_t;t++){  
       log_pC_t(t) = 0;
@@ -393,14 +422,16 @@ Type objective_function<Type>::operator() ()
 
 
   vector<Type> log_pML_t(n_t);
+  log_pML_t.setZero();
   if(n_ml>0){
     for(int t=0;t<n_t;t++){
       log_pML_t(t) = 0;
       for(int s=0;s<n_s;s++){
         vector<Type> ML_site(n_ml);
-        ML_site = ML_t.col(s);
+        if(n_s>1) ML_site = ML_t.col(s);
 
         for(int ml=0;ml<n_ml;ml++){
+         if(n_s==1) ML_site(ml) = ML_t(ml);
          if(ML_yrs(ml)==T_yrs(t)){
             log_pML_t(t) += dnorm( ML_site(ml), L_t_hat(t,s), L_t_hat(t,s)*CV_L, true);
          }
@@ -408,6 +439,7 @@ Type objective_function<Type>::operator() ()
       }
     }
   }
+
 
   jnll_comp(2) = 0;
   if(n_lc>0) jnll_comp(2) = Type(-1)*sum( log_pL_t );
