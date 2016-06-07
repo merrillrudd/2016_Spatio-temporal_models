@@ -8,7 +8,8 @@ FormatInput_LB <- function(Nyears, DataList, linf, vbk, t0, M, AgeMax,
             if(is.matrix(DataList$LF) | is.array(DataList$LF)){
                 n_lc <- nrow(DataList$LF)
                 LC_yrs <- as.numeric(rownames(DataList$LF))
-                LF <- as.matrix(DataList$LF)
+                if(is.matrix(DataList$LF)) LF <- as.matrix(DataList$LF)
+                if(is.array(DataList$LF)) LF <- as.array(DataList$LF)
             }
             if(is.vector(DataList$LF)){
                 n_lc <- 1
@@ -24,7 +25,7 @@ FormatInput_LB <- function(Nyears, DataList, linf, vbk, t0, M, AgeMax,
                 I_yrs=as.vector(0),
                 LC_yrs=LC_yrs,
                 ML_yrs=as.vector(0),
-                obs_per_yr=obs_per_yr, FType=FType,
+                obs_per_yr=obs_per_yr, RecType=RecType, FType=FType, LType=LType,
                 site=site, n_s=length(site),
                 I_t=as.vector(0), C_t=as.vector(0), 
                 ML_t=as.array(0), LF=LF,
@@ -55,7 +56,7 @@ FormatInput_LB <- function(Nyears, DataList, linf, vbk, t0, M, AgeMax,
                 I_yrs=as.vector(0),
                 LC_yrs=as.vector(0),
                 ML_yrs=ML_yrs,
-                obs_per_yr=obs_per_yr, FType=FType,
+                obs_per_yr=obs_per_yr, RecType=RecType, FType=FType, LType=LType,
                 I_t=as.vector(0), C_t=as.vector(0), 
                 ML_t=DataList$ML_t, LF=as.array(0),
                 rel_c=0, rel_i=0,
@@ -102,6 +103,14 @@ FormatInput_LB <- function(Nyears, DataList, linf, vbk, t0, M, AgeMax,
             Map[["beta"]] <- NA
             Map[["beta"]] <- factor(Map[["beta"]])
         } 
+
+        if(est_sigma==FALSE){
+            Map[["log_sigma_C"]] <- NA
+            Map[["log_sigma_C"]] <- factor(Map[["log_sigma_C"]])
+
+            Map[["log_sigma_I"]] <- NA
+            Map[["log_sigma_I"]] <- factor(Map[["log_sigma_I"]])
+        }
         ## turn off annual F estimates - only last value
         #### SHOULD CHANGE THIS TO MEAN-LENGTH MORTALITY ESTIMATOR
         if(FType==1){
@@ -113,20 +122,23 @@ FormatInput_LB <- function(Nyears, DataList, linf, vbk, t0, M, AgeMax,
         if(RecType==0 & LType==1){
             Random <- c("Nu_input")
             Map[["Eps_input"]] <- 1:length(Parameters[["Eps_input"]])
+            Map[["Eps_input"]] <- NA
             Map[["Eps_input"]] <- factor(Map[["Eps_input"]])
         }
         if(RecType==1 & LType==0){
             Random <- c("Eps_input")
             Map[["Nu_input"]] <- 1:length(Parameters[["Nu_input"]])
+            Map[["Nu_input"]] <- NA
             Map[["Nu_input"]] <- factor(Map[["Nu_input"]])
         }
         if(RecType==1 & LType==1){
             Random <- NULL
             Map[["Nu_input"]] <- 1:length(Parameters[["Nu_input"]])
+            Map[["Nu_input"]] <- NA
             Map[["Nu_input"]] <- factor(Map[["Nu_input"]])
             Map[["Eps_input"]] <- 1:length(Parameters[["Eps_input"]])
+            Map[["Eps_input"]] <- NA
             Map[["Eps_input"]] <- factor(Map[["Eps_input"]])
-
         }
 
 

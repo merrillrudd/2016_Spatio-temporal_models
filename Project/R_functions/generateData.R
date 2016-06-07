@@ -1,4 +1,4 @@
-generateData <- function(modpath, itervec, spatial, Fdynamics, Rdynamics="Constant", LType=0){
+generateData <- function(modpath, itervec, spatial, Fdynamics, Rdynamics="Constant", LType=1){
 
   ## life history - truth without spatial structure - deterministic across iterations
   lh_nospace <- create_lh_list(lh="Siganus_sutor", selex="asymptotic")
@@ -76,11 +76,11 @@ generateData <- function(modpath, itervec, spatial, Fdynamics, Rdynamics="Consta
       ## mean length over time pooled across sites
       ML_t_pool <- sapply(1:nrow(LF_pool), function(x) sum(LF_pool[x,]*1:ncol(LF_pool))/sum(LF_pool[x,])) 
 
-      if(LType==0){
+      if(LType==1){
         DataList$LF <- LF_pool
         DataList$ML_t <- ML_t_pool  
       }
-      if(LType==1){
+      if(LType==0){
         DataList$LF <- LF_site_array
         DataList$ML_t <- ML_t_site
       }
