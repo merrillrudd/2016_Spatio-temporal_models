@@ -1,7 +1,7 @@
 rm(list=ls())
 
-# data_dir <- "C:\\Git_Projects\\2016_Spatio-temporal_models\\Project"
-data_dir <- "F:\\Merrill\\Git_Projects\\2016_Spatio-temporal_models\\Project"
+data_dir <- "C:\\Git_Projects\\2016_Spatio-temporal_models\\Project"
+# data_dir <- "F:\\Merrill\\Git_Projects\\2016_Spatio-temporal_models\\Project"
 setwd(data_dir)
 source("R_functions\\functions.R")
 
@@ -39,8 +39,8 @@ compile(paste0(Version, ".cpp"))
 pool_space_dir <- file.path(data_dir, "pool_space")
 dir.create(pool_space_dir, showWarnings=FALSE) 
 
-unlink(pool_space_dir, TRUE)
-dir.create(pool_space_dir, showWarnings=FALSE) 
+# unlink(pool_space_dir, TRUE)
+# dir.create(pool_space_dir, showWarnings=FALSE) 
 
 nospace_dir <- file.path(pool_space_dir, "nospace_dir")
 dir.create(nospace_dir, showWarnings=FALSE)
@@ -70,12 +70,12 @@ REML=FALSE
 
 ## settings - space
 ### simulation of 1D spatial process on growth - from HW5
-n_i <- 15 ##  number of sites
-Scale <- 2
-Sigma2 <- 0.1
-SD_spatial <- 0.1
-linf <- 36.2 
-beta_y <- 0.05
+n_i <- 15  ## number of sites
+Scale <- 2 ## scale for Gaussian random field
+Sigma2 <- 0.1 ## variance for random effect
+SD_spatial <- 0.1 ## variance for Gaussian random field
+linf <- 36.2  ## Linf_0
+beta_y <- 0.05 ## spatial trend
 
 setwd(data_dir)
 source("R_functions\\functions.R")
