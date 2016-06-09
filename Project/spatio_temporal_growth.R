@@ -129,7 +129,7 @@ plotLF <- generateData(modpath=modpath_space, itervec=1, spatial=TRUE, Fdynamics
 ## compare length comp with no spatial variation to pooled length comp with spatial variation 
 plotLFcompare <- generateData(modpath=modpath_space, itervec=1, spatial=TRUE, Fdynamics="Constant", LType=0, plotLF_compare=TRUE)
 
-
+## asymptotic length across sites
 linf_sites <- y_sites <- matrix(NA, nrow=n_i, ncol=64)
 for(i in 1:64){
 	sim <- readRDS(file.path(modpath_space, "F_Constant", i, "spatial_sim.rds"))
@@ -144,14 +144,13 @@ for(i in 1:(dim^2)){
 	abline(h=linf, col="red", lty=2)
 	if(i==1 | i %% dim == 1) axis(2, at=pretty(c(min(linf_sites), max(linf_sites))), las=2)
 	if(i %in% (dim*(dim-1)+1):(dim^2)) axis(1, at=seq(-3.5,-1.5,by=0.5))
+	text(x=-3.9, y=max(linf_sites)*0.97, letters[i], font=2, cex=1.5)
 	box(col="gray")
 }
 mtext(side=1, "Latitude", outer=TRUE, line=3)
 mtext(side=2, "Asymptotic length (cm)", outer=TRUE, line=3)
 
-setwd(data_dir)
-source("R_functions\\functions.R")
-
+## compare model fits
 plotFIT(compare_quant=c( "ML", "R", "F", "D"), compare_type="base_values", scenario_name="No spatial structure", modpath=file.path(modpath_nospace, "F_Constant"), iter=1)
 dev.new()
 plotFIT(compare_quant=c( "ML", "R", "F", "D"), compare_type="base_values", scenario_name="Spatial structure", modpath=file.path(modpath_space, "F_Constant"), iter=1)
