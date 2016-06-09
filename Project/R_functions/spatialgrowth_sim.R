@@ -9,12 +9,14 @@ spatialgrowth_sim <- function(n_i, Scale, Sigma2, SD_spatial, linf, beta_y){
 
 	## simulate spatial process
 	RMmodel <- RMgauss(var=SD_spatial^2, scale=Scale)
-	linf_i <- linf * exp(RFsimulate(model=RMmodel, x=rep(0, n_i), y=y_i)@data[,1] - Sigma2/2) * exp( beta_y*(y_i - mean(c(lat_min, lat_max))))
+	linf_i1 <- linf * exp(RFsimulate(model=RMmodel, x=rep(0, n_i), y=y_i)@data[,1] - Sigma2/2) * exp( beta_y*(y_i - mean(c(lat_min, lat_max))))
+	linf_i <- linf_i1 + (linf-mean(linf_i1))
 
 	## resimulate to ensure Linf > length at 50% maturity from literature
 	while(any(linf_i < 20.2)){
 		RMmodel <- RMgauss(var=SD_spatial^2, scale=Scale)
-		linf_i <- linf * exp(RFsimulate(model=RMmodel, x=rep(0, n_i), y=y_i)@data[,1] - Sigma2/2) * exp( beta_y*(y_i - mean(y_i)))
+		linf_i1 <- linf * exp(RFsimulate(model=RMmodel, x=rep(0, n_i), y=y_i)@data[,1] - Sigma2/2) * exp( beta_y*(y_i - mean(y_i)))
+		linf_i <- linf_i1 + (linf-mean(linf_i1))
 	}
 	# plot( y=linf_i, x=y_i )
 
