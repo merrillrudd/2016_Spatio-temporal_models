@@ -109,8 +109,7 @@ Type objective_function<Type>::operator() ()
   vector<Type> F_t(n_t);
   Type F_equil = exp(log_F_t_input(0));
   for(int t=0;t<n_t;t++){
-    if(RecType!=2) F_t(t) = exp(log_F_t_input(t));
-    if(RecType==2) F_t(t) = F_equil;
+    F_t(t) = exp(log_F_t_input(t));
   }
 
   // ========= Convert inputs  =============================
